@@ -55,18 +55,20 @@ Human_GFF <- read_gff(file = HS.gff.refseq)
 
 length(Human_CDS)
 
-Frameshif_Annotation_tool <- function(NM_number, Indel_type,Indel_start,Indel_end)
+Frameshif_Annotation_tool <- function(Gene,NM_number, Indel_type,Indel_start,Indel_end)
 {  
 ####################################################################
 #####INPUT VARIABLES FOR FRAMESHIFT ANALYSIS########################
 ####################################################################
-#NM_number <- "NM_023073"
+#Gene = "CUBN"
+  
+#NM_number <- "NM_001081"
 NM_number <- paste0(NM_number,".")
 
 #Indel_type = "deletion"
 
-#Indel_start = 2812
-#Indel_end = 2813
+#Indel_start = 5913
+#Indel_end = 5916
 
 Variant_Aminoacid_Position = ceiling((Indel_start/3))
 
@@ -76,7 +78,15 @@ Variant_Aminoacid_Position = ceiling((Indel_start/3))
 NM_Accesion_search <- filter(Human_GFF, type == "CDS")
 NM_Accesion_search$Grep <- grepl(NM_number,NM_Accesion_search$attribute)
 NM_Accesion_search <- filter(NM_Accesion_search,Grep == TRUE)
-NM_Data_info <- as.vector(unlist(strsplit(NM_Accesion_search$attribute[1],";")))
+
+NM_Data_info <- as.data.frame(NM_Accesion_search$attribute)
+colnames(NM_Data_info) <- "attribute"
+NM_Data_info$Grep <- grepl(Gene,NM_Data_info$attribute)
+NM_Data_info <- filter(NM_Data_info, Grep == TRUE)
+
+NM_Data_info <- as.character(NM_Data_info$attribute[1])
+
+NM_Data_info <- as.vector(unlist(strsplit(NM_Data_info,";")))
 
 #NP_number = "NP_000177" example
 
@@ -138,14 +148,23 @@ First_Stop_position <- as.vector(unlist(stri_locate_all(pattern = '*', as.charac
 Aminoacid_WT_Position <- unlist(strsplit(as.character(unlist(WT_protein_translated)),""))[Variant_Aminoacid_Position]
 Aminoacid_MUTANT_Position <- unlist(strsplit(as.character(unlist(Mutant_protein_translated)),""))[Variant_Aminoacid_Position]
 
-Stop_Postion_in_fs <- First_Stop_position - Variant_Aminoacid_Position
+Stop_Postion_in_fs <- (First_Stop_position - Variant_Aminoacid_Position + 1)
 
 Frame_Shift_nomenclature <- paste0("p.",Aminoacid_WT_Position,Variant_Aminoacid_Position,Aminoacid_MUTANT_Position,"fs","*",Stop_Postion_in_fs)
 
 ####PRINT ACCORDING TO NOMENCLATURE
+print(Frame_Shift_nomenclature)
 return(Frame_Shift_nomenclature)
 
 }#####END Frameshift Annotation Tool.
 
-Result <- Frameshif_Annotation_tool("NM_023073","deletion",2812,2813)
+Frameshift_list <- read.csv(file = "Frameshift_list_FrAT.csv", header = TRUE, colClasses = c("character","character","numeric","numeric","character"))
+Frameshift_list$IndelType="Deletion"
+Frameshift_list$Result <- "Waiting"
 
+Frameshift_list$Gene[1] <- "CPLANE1"
+
+for (i in 1:nrow(Frameshift_list))
+{
+  Frameshift_list$Result[i] <- Frameshif_Annotation_tool(Frameshift_list$Gene[i],Frameshift_list$NM_Number[i],Frameshift_list$IndelType[i],Frameshift_list$Start_Del[i],Frameshift_list$End_Del[i])
+}
