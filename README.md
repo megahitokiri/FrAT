@@ -1,6 +1,5 @@
 # FrAT
 Frameshift Annotation Tool (FrAT)
-
 setwd("/Users/joselazaro/Documents/Genomes")
 
 #https://cran.r-project.org/web/packages/biomartr/vignettes/Sequence_Retrieval.html#example-ncbi-refseq-2
@@ -55,7 +54,7 @@ Human_GFF <- read_gff(file = HS.gff.refseq)
 
 length(Human_CDS)
 
-Frameshif_Annotation_tool <- function(Gene,NM_number, Indel_type,Indel_start,Indel_end)
+Frameshif_Annotation_tool <- function(Gene,NM_number, Indel_type,Indel_start,Indel_end,Base_change)
 {  
 ####################################################################
 #####INPUT VARIABLES FOR FRAMESHIFT ANALYSIS########################
@@ -118,7 +117,21 @@ Mutant_protein <- as.character(unlist(strsplit(WT_protein,""), use.names=FALSE))
 
 ####Remove bases from Mutant Proteint
 #Mutant_protein <- Mutant_protein[-2799:-2800] example
-Mutant_protein <- Mutant_protein[-((Indel_start:Indel_end))]
+if(Indel_type=="Deletion")
+  {
+  Mutant_protein <- Mutant_protein[-((Indel_start:Indel_end))]
+  }
+
+if(Indel_type=="Insertion")
+  {
+  Base_change <- as.character(unlist(strsplit(Base_change,"")))
+  Mutant_protein <- append(Mutant_protein,Base_change,after = Indel_start)
+  }
+
+################################
+####START TRANSLATION ANALYSIS####
+#################################
+
 
 Mutant_protein <- paste(Mutant_protein,collapse="")
 
@@ -159,12 +172,13 @@ return(Frame_Shift_nomenclature)
 }#####END Frameshift Annotation Tool.
 
 Frameshift_list <- read.csv(file = "Frameshift_list_FrAT.csv", header = TRUE, colClasses = c("character","character","numeric","numeric","character"))
-Frameshift_list$IndelType="Deletion"
 Frameshift_list$Result <- "Waiting"
 
 Frameshift_list$Gene[1] <- "CPLANE1"
 
 for (i in 1:nrow(Frameshift_list))
 {
-  Frameshift_list$Result[i] <- Frameshif_Annotation_tool(Frameshift_list$Gene[i],Frameshift_list$NM_Number[i],Frameshift_list$IndelType[i],Frameshift_list$Start_Del[i],Frameshift_list$End_Del[i])
+  Frameshift_list$Result[i] <- Frameshif_Annotation_tool(Frameshift_list$Gene[i],Frameshift_list$NM_Number[i],Frameshift_list$IndelType[i],Frameshift_list$Start_Del[i],Frameshift_list$End_Del[i],Frameshift_list$Base_change[i])
 }
+
+
